@@ -1108,7 +1108,7 @@ contract TakeTest is BaseTest {
 
         midnight.setIsAuthorized(address(ratifier), true, address(ratifier));
         bytes memory _ratifierData = abi.encode(otherPrivateKey);
-        vm.expectCall(address(ratifier), abi.encodeCall(IRatifier.isRatified, (lenderOffer, _ratifierData)));
+        vm.expectCall(address(ratifier), abi.encodeCall(IRatifier.isRatified, (lenderOffer, _ratifierData, sender)));
         vm.prank(sender);
         midnight.take(lenderOffer, _ratifierData, 0, sender, sender, address(0), hex"");
     }
@@ -1126,7 +1126,7 @@ contract TakeTest is BaseTest {
         vm.prank(maker);
         midnight.setIsAuthorized(address(ratifier), true, maker);
         bytes memory _ratifierData = abi.encode(otherPrivateKey);
-        vm.expectCall(address(ratifier), abi.encodeCall(IRatifier.isRatified, (lenderOffer, _ratifierData)));
+        vm.expectCall(address(ratifier), abi.encodeCall(IRatifier.isRatified, (lenderOffer, _ratifierData, sender)));
         vm.prank(sender);
         midnight.take(lenderOffer, _ratifierData, 0, sender, sender, address(0), hex"");
     }
@@ -1142,6 +1142,35 @@ contract TakeTest is BaseTest {
         midnight.setIsAuthorized(address(ratifier), true, maker);
         vm.prank(sender);
         midnight.take(lenderOffer, emptySig, 0, sender, sender, address(0), hex"");
+    }
+
+    function testTakePassesTakerToRatifier() public {
+        TakerCheckingRatifier ratifier = new TakerCheckingRatifier();
+        lenderOffer.ratifier = address(ratifier);
+        bytes memory ratifierData = abi.encode(borrower);
+
+        vm.prank(lender);
+        midnight.setIsAuthorized(address(ratifier), true, lender);
+        // otherBorrower takes on behalf of borrower, so msg.sender != taker. This checks Midnight forwards the taker
+        // argument and not msg.sender.
+        vm.prank(borrower);
+        midnight.setIsAuthorized(otherBorrower, true, borrower);
+
+        vm.expectCall(address(ratifier), abi.encodeCall(IRatifier.isRatified, (lenderOffer, ratifierData, borrower)));
+        vm.prank(otherBorrower);
+        midnight.take(lenderOffer, ratifierData, 0, borrower, borrower, address(0), hex"");
+    }
+
+    function testTakeRevertsWhenRatifierRejectsTaker() public {
+        TakerCheckingRatifier ratifier = new TakerCheckingRatifier();
+        lenderOffer.ratifier = address(ratifier);
+
+        vm.prank(lender);
+        midnight.setIsAuthorized(address(ratifier), true, lender);
+
+        vm.expectRevert("wrong taker");
+        vm.prank(borrower);
+        midnight.take(lenderOffer, abi.encode(otherBorrower), 0, borrower, borrower, address(0), hex"");
     }
 
     function testTakeRatificationFailed(address maker, address sender, uint256 signerPrivateKey) public {
@@ -1722,11 +1751,18 @@ contract InvalidSellCallback is ISellCallback {
 contract IsRatifiedCallback is IRatifier {
     bytes32 public returnValue = CALLBACK_SUCCESS;
 
-    function isRatified(Offer memory, bytes memory) external view returns (bytes32) {
+    function isRatified(Offer memory, bytes memory, address) external view returns (bytes32) {
         return returnValue;
     }
 
     function setReturnValue(bytes32 _returnValue) external {
         returnValue = _returnValue;
+    }
+}
+
+contract TakerCheckingRatifier is IRatifier {
+    function isRatified(Offer memory, bytes memory data, address taker) external pure returns (bytes32) {
+        require(taker == abi.decode(data, (address)), "wrong taker");
+        return CALLBACK_SUCCESS;
     }
 }
