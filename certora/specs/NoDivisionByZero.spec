@@ -38,13 +38,14 @@ methods {
 
 /// GHOSTS ///
 
-// Reuse part of the setup of Healthiness.spec.
-
 persistent ghost address globalMarketLoanToken;
 
 persistent ghost uint256 globalMarketChainId;
 
-persistent ghost uint256 globalMarketCollateralLength;
+persistent ghost uint256 globalMarketCollateralLength {
+    // Limit the number of collateralParams for performance reasons.
+    axiom globalMarketCollateralLength <= 3;
+}
 
 persistent ghost mapping(uint256 => address) globalMarketCollateralOracle;
 
