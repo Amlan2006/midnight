@@ -21,6 +21,7 @@ contract BlueBuyCallbackIntegrationTest is BaseTest {
     BlueBuyCallback internal callback;
     Market internal market;
     MarketParams internal blueMarketParams;
+    uint256 internal observedBound;
 
     function setUp() public override {
         super.setUp();
@@ -107,5 +108,24 @@ contract BlueBuyCallbackIntegrationTest is BaseTest {
         uint256 result = callback.buyerAssetsBound(bytes32(0), market, lender, abi.encode(blueMarketParams));
 
         assertEq(result, suppliedAssets - borrowedAssets);
+    }
+
+    function testBuyerAssetsBoundIsCappedByBlueBalance(uint256 suppliedAssets, uint256 flashloanedAssets) public {
+        suppliedAssets = bound(suppliedAssets, 1, 1e30);
+        flashloanedAssets = bound(flashloanedAssets, 1, suppliedAssets);
+        deal(address(loanToken), address(this), suppliedAssets);
+        require(loanToken.approve(address(blue), suppliedAssets));
+        blue.supply(blueMarketParams, suppliedAssets, 0, address(callback), hex"");
+
+        assertEq(callback.buyerAssetsBound(bytes32(0), market, lender, abi.encode(blueMarketParams)), suppliedAssets);
+
+        blue.flashLoan(address(loanToken), flashloanedAssets, hex"");
+
+        assertEq(observedBound, suppliedAssets - flashloanedAssets);
+    }
+
+    function onMorphoFlashLoan(uint256 assets, bytes calldata) external {
+        observedBound = callback.buyerAssetsBound(bytes32(0), market, lender, abi.encode(blueMarketParams));
+        require(loanToken.approve(address(blue), assets));
     }
 }
