@@ -9,8 +9,13 @@ import {MorphoBalancesLib} from "../../../lib/morpho-blue/src/libraries/peripher
 import {SharesMathLib} from "../../../lib/morpho-blue/src/libraries/SharesMathLib.sol";
 import {Market} from "../../interfaces/IMidnight.sol";
 import {CALLBACK_SUCCESS} from "../../libraries/ConstantsLib.sol";
+import {UtilsLib} from "../../libraries/UtilsLib.sol";
 import {SafeApproveLib} from "../libraries/SafeApproveLib.sol";
 import {IBlueBuyCallback} from "./IBlueBuyCallback.sol";
+
+interface IERC20Balance {
+    function balanceOf(address account) external view returns (uint256);
+}
 
 /// @dev Anyone authorized by the owner on Midnight can pull from the Blue position held by this callback contract by
 /// making the owner buy dummy credit on Midnight.
@@ -89,7 +94,8 @@ contract BlueBuyCallback is IBlueBuyCallback {
         uint256 supplyAssets = IMorpho(BLUE).position(marketParams.id(), address(this)).supplyShares
             .toAssetsDown(totalSupplyAssets, totalSupplyShares);
         uint256 liquidity = totalSupplyAssets - totalBorrowAssets;
+        uint256 blueBalance = IERC20Balance(marketParams.loanToken).balanceOf(BLUE);
 
-        return supplyAssets < liquidity ? supplyAssets : liquidity;
+        return UtilsLib.min(UtilsLib.min(supplyAssets, liquidity), blueBalance);
     }
 }
