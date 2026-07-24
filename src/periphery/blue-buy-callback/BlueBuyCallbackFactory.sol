@@ -3,7 +3,7 @@
 pragma solidity 0.8.34;
 
 import {BlueBuyCallback} from "./BlueBuyCallback.sol";
-import {IBlueBuyCallbackFactory} from "./interfaces/IBlueBuyCallbackFactory.sol";
+import {IBlueBuyCallbackFactory} from "./IBlueBuyCallbackFactory.sol";
 
 contract BlueBuyCallbackFactory is IBlueBuyCallbackFactory {
     address public immutable MIDNIGHT;

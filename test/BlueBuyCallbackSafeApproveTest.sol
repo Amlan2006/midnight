@@ -3,15 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {Test} from "../lib/forge-std/src/Test.sol";
-import {BlueBuyCallback} from "../src/periphery/BlueBuyCallback.sol";
-import {IBlueBuyCallback} from "../src/periphery/interfaces/IBlueBuyCallback.sol";
+import {SafeApproveLib} from "../src/periphery/libraries/SafeApproveLib.sol";
 
 contract BlueBuyCallbackSafeApproveTest is Test {
     address internal spender = makeAddr("spender");
     BlueBuyCallbackHarness internal callback;
 
     function setUp() public {
-        callback = new BlueBuyCallbackHarness(address(new MockBlue()));
+        callback = new BlueBuyCallbackHarness();
     }
 
     function testSafeApproveSupportsNoReturnValue(uint256 value) public {
@@ -25,7 +24,7 @@ contract BlueBuyCallbackSafeApproveTest is Test {
     function testSafeApproveRevertsIfApproveReturnsFalse() public {
         FalseApproveToken token = new FalseApproveToken();
 
-        vm.expectRevert(IBlueBuyCallback.ApproveReturnedFalse.selector);
+        vm.expectRevert(SafeApproveLib.ApproveReturnedFalse.selector);
         callback.exposedSafeApprove(address(token), spender, 1);
     }
 
@@ -58,20 +57,14 @@ contract BlueBuyCallbackSafeApproveTest is Test {
     }
 }
 
-contract BlueBuyCallbackHarness is BlueBuyCallback {
-    constructor(address blue) BlueBuyCallback(address(this), address(0), blue) {}
-
+contract BlueBuyCallbackHarness {
     function exposedSafeApprove(address token, address spender, uint256 value) external {
-        super.safeApprove(token, spender, value);
+        SafeApproveLib.safeApprove(token, spender, value);
     }
 
     function exposedForceApproveMax(address token, address spender) external {
-        super.forceApproveMax(token, spender);
+        SafeApproveLib.forceApproveMax(token, spender);
     }
-}
-
-contract MockBlue {
-    function setAuthorization(address, bool) external {}
 }
 
 contract NoReturnApproveToken {

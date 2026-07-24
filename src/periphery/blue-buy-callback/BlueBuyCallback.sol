@@ -2,19 +2,15 @@
 // Copyright (c) 2026 Morpho Association
 pragma solidity 0.8.34;
 
-import {IMorpho, Id, MarketParams, Authorization, Signature} from "../../lib/morpho-blue/src/interfaces/IMorpho.sol";
-import {AUTHORIZATION_TYPEHASH, DOMAIN_TYPEHASH} from "../../lib/morpho-blue/src/libraries/ConstantsLib.sol";
-import {MarketParamsLib} from "../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
-import {MorphoBalancesLib} from "../../lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
-import {SharesMathLib} from "../../lib/morpho-blue/src/libraries/SharesMathLib.sol";
-import {Market} from "../interfaces/IMidnight.sol";
-import {CALLBACK_SUCCESS} from "../libraries/ConstantsLib.sol";
-import {IBlueBuyCallback} from "./interfaces/IBlueBuyCallback.sol";
-
-interface IERC20 {
-    function allowance(address owner, address spender) external view returns (uint256);
-    function approve(address spender, uint256 value) external returns (bool);
-}
+import {IMorpho, Id, MarketParams, Authorization, Signature} from "../../../lib/morpho-blue/src/interfaces/IMorpho.sol";
+import {AUTHORIZATION_TYPEHASH, DOMAIN_TYPEHASH} from "../../../lib/morpho-blue/src/libraries/ConstantsLib.sol";
+import {MarketParamsLib} from "../../../lib/morpho-blue/src/libraries/MarketParamsLib.sol";
+import {MorphoBalancesLib} from "../../../lib/morpho-blue/src/libraries/periphery/MorphoBalancesLib.sol";
+import {SharesMathLib} from "../../../lib/morpho-blue/src/libraries/SharesMathLib.sol";
+import {Market} from "../../interfaces/IMidnight.sol";
+import {CALLBACK_SUCCESS} from "../../libraries/ConstantsLib.sol";
+import {SafeApproveLib} from "../libraries/SafeApproveLib.sol";
+import {IBlueBuyCallback} from "./IBlueBuyCallback.sol";
 
 /// @dev Anyone authorized by the owner on Midnight can pull from the Blue position held by this callback contract by
 /// making the owner buy dummy credit on Midnight.
@@ -76,7 +72,7 @@ contract BlueBuyCallback is IBlueBuyCallback {
         require(marketParams.loanToken == market.loanToken, InconsistentLoanToken());
 
         if (buyerAssets > 0) IMorpho(BLUE).withdraw(marketParams, buyerAssets, 0, address(this), address(this));
-        forceApproveMax(market.loanToken, MIDNIGHT);
+        SafeApproveLib.forceApproveMax(market.loanToken, MIDNIGHT);
 
         return CALLBACK_SUCCESS;
     }
@@ -95,24 +91,5 @@ contract BlueBuyCallback is IBlueBuyCallback {
         uint256 liquidity = totalSupplyAssets - totalBorrowAssets;
 
         return supplyAssets < liquidity ? supplyAssets : liquidity;
-    }
-
-    /// @dev Skips the approval entirely to save gas when the current allowance is already at least 2^95 - 1 (some
-    /// tokens like COMP and UNI on Ethereum have a max allowance of type(uint96).max).
-    /// @dev Resets to 0 before re-approving to support USDT-like tokens.
-    function forceApproveMax(address token, address spender) internal {
-        if (IERC20(token).allowance(address(this), spender) >= type(uint96).max / 2) return;
-        safeApprove(token, spender, 0);
-        safeApprove(token, spender, type(uint256).max);
-    }
-
-    function safeApprove(address token, address spender, uint256 value) internal {
-        (bool success, bytes memory returndata) = token.call(abi.encodeCall(IERC20.approve, (spender, value)));
-        if (!success) {
-            assembly ("memory-safe") {
-                revert(add(returndata, 0x20), mload(returndata))
-            }
-        }
-        require(returndata.length == 0 || abi.decode(returndata, (bool)), ApproveReturnedFalse());
     }
 }

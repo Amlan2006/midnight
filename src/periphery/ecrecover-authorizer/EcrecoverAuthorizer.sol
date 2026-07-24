@@ -2,14 +2,14 @@
 // Copyright (c) 2026 Morpho Association
 pragma solidity 0.8.34;
 
-import {IMidnight} from "../interfaces/IMidnight.sol";
+import {IMidnight} from "../../interfaces/IMidnight.sol";
 import {
     IEcrecoverAuthorizer,
     Authorization,
     Signature,
     AUTHORIZATION_TYPEHASH,
     EIP712_DOMAIN_TYPEHASH
-} from "./interfaces/IEcrecoverAuthorizer.sol";
+} from "./IEcrecoverAuthorizer.sol";
 
 /// @dev Helper contract to authorize on Midnight with a signature.
 /// @dev This contract must be authorized on Midnight.
