@@ -3,50 +3,38 @@
 pragma solidity ^0.8.0;
 
 import {Test} from "../lib/forge-std/src/Test.sol";
-import {BlueBuyCallback} from "../src/periphery/BlueBuyCallback.sol";
-import {IBlueBuyCallback} from "../src/periphery/interfaces/IBlueBuyCallback.sol";
+import {ERC20Lib} from "../src/periphery/libraries/ERC20Lib.sol";
 
-contract BlueBuyCallbackSafeApproveTest is Test {
+contract ERC20LibTest is Test {
     address internal spender = makeAddr("spender");
-    BlueBuyCallbackHarness internal callback;
-
-    function setUp() public {
-        callback = new BlueBuyCallbackHarness(address(new MockBlue()));
-    }
 
     function testSafeApproveSupportsNoReturnValue(uint256 value) public {
         NoReturnApproveToken token = new NoReturnApproveToken();
 
-        callback.exposedSafeApprove(address(token), spender, value);
+        this.safeApprove(address(token), spender, value);
 
-        assertEq(token.allowance(address(callback), spender), value);
+        assertEq(token.allowance(address(this), spender), value);
     }
 
     function testSafeApproveRevertsIfApproveReturnsFalse() public {
         FalseApproveToken token = new FalseApproveToken();
 
-        vm.expectRevert(IBlueBuyCallback.ApproveReturnedFalse.selector);
-        callback.exposedSafeApprove(address(token), spender, 1);
+        vm.expectRevert(ERC20Lib.ApproveReturnedFalse.selector);
+        this.safeApprove(address(token), spender, 1);
     }
 
     function testSafeApproveBubblesApproveRevert() public {
         RevertingApproveToken token = new RevertingApproveToken();
 
         vm.expectRevert(RevertingApproveToken.ApproveReverted.selector);
-        callback.exposedSafeApprove(address(token), spender, 1);
+        this.safeApprove(address(token), spender, 1);
     }
-}
 
-contract BlueBuyCallbackHarness is BlueBuyCallback {
-    constructor(address blue) BlueBuyCallback(address(this), address(0), blue) {}
+    /* HELPERS */
 
-    function exposedSafeApprove(address token, address spender, uint256 value) external {
-        super.safeApprove(token, spender, value);
+    function safeApprove(address token, address spender_, uint256 value) external {
+        ERC20Lib.safeApprove(token, spender_, value);
     }
-}
-
-contract MockBlue {
-    function setAuthorization(address, bool) external {}
 }
 
 contract NoReturnApproveToken {
