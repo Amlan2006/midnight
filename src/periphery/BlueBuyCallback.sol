@@ -18,8 +18,7 @@ interface IERC20 {
 }
 
 /// @dev Inherits the token safety requirements of Midnight (see Midnight.sol).
-/// @dev Anyone authorized by the owner on Midnight can pull from the Blue position held by this callback contract by
-/// making the owner buy dummy credit on Midnight.
+/// @dev Anyone authorized by the owner on Midnight can indirectly steal this contract's Blue positions.
 contract BlueBuyCallback is IBlueBuyCallback {
     using MarketParamsLib for MarketParams;
     using MorphoBalancesLib for IMorpho;
