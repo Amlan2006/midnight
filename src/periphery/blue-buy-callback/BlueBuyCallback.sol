@@ -23,7 +23,7 @@ import {ERC20Lib} from "../libraries/ERC20Lib.sol";
 /// bundle contracts.
 /// @dev Inherits the token safety requirements of Midnight (see Midnight.sol).
 /// @dev Anyone authorized by the owner on Midnight can indirectly steal this contract's Blue positions.
-/// @dev An account authorized on Blue to act on behalf of this contract can technically supply collateral and borrow,
+/// @dev An account authorized on Blue to act on behalf of this contract can notably supply collateral and borrow,
 /// but it does not affect onBuy.
 contract BlueBuyCallback is IBlueBuyCallback {
     using MarketParamsLib for MarketParams;
