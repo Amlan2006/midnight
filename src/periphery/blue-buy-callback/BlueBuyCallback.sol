@@ -64,6 +64,7 @@ contract BlueBuyCallback is IBlueBuyCallback {
         }
     }
 
+    /// @dev Useful to handle rewards that the callback earned through its Blue positions.
     function skim(address token) external {
         uint256 balance = IERC20Extended(token).balanceOf(address(this));
         SafeTransferLib.safeTransfer(token, OWNER, balance);
