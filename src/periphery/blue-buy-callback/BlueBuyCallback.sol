@@ -10,15 +10,19 @@ import {SharesMathLib} from "../../../lib/morpho-blue/src/libraries/SharesMathLi
 import {Market} from "../../interfaces/IMidnight.sol";
 import {CALLBACK_SUCCESS} from "../../libraries/ConstantsLib.sol";
 import {UtilsLib} from "../../libraries/UtilsLib.sol";
-import {SafeApproveLib} from "../libraries/SafeApproveLib.sol";
-import {IBlueBuyCallback} from "./IBlueBuyCallback.sol";
+import {SafeTransferLib} from "../../libraries/SafeTransferLib.sol";
+import {IBlueBuyCallback} from "./interfaces/IBlueBuyCallback.sol";
+import {IERC20Extended} from "./interfaces/IERC20Extended.sol";
+import {ERC20Lib} from "../libraries/ERC20Lib.sol";
 
-interface IERC20Balance {
-    function balanceOf(address account) external view returns (uint256);
-}
-
-/// @dev Anyone authorized by the owner on Midnight can pull from the Blue position held by this callback contract by
-/// making the owner buy dummy credit on Midnight.
+/// @dev This contract is meant to be used as a Midnight buy offer callback in order to park funds on a Blue market
+/// while the offer waits to be taken.
+/// @dev The positions on the Blue markets are acquired through supplies on behalf of this contract (permissionless).
+/// @dev The OWNER can withdraw this position on Blue, for example if the offer expired.
+/// @dev The OWNER can also authorize other accounts (optionally with signature), typically useful for
+/// bundle contracts.
+/// @dev Inherits the token safety requirements of Midnight (see Midnight.sol).
+/// @dev Anyone authorized by the owner on Midnight can indirectly steal this contract's Blue positions.
 contract BlueBuyCallback is IBlueBuyCallback {
     using MarketParamsLib for MarketParams;
     using MorphoBalancesLib for IMorpho;
@@ -60,6 +64,12 @@ contract BlueBuyCallback is IBlueBuyCallback {
         }
     }
 
+    function skim(address token) external {
+        uint256 balance = IERC20Extended(token).balanceOf(address(this));
+        SafeTransferLib.safeTransfer(token, OWNER, balance);
+        emit Skim(msg.sender, token, balance);
+    }
+
     /// @dev Reverts if the owner position on the requested market is too small or if the liquidity on that market is
     /// too small.
     function onBuy(
@@ -77,15 +87,19 @@ contract BlueBuyCallback is IBlueBuyCallback {
         require(marketParams.loanToken == market.loanToken, InconsistentLoanToken());
 
         if (buyerAssets > 0) IMorpho(BLUE).withdraw(marketParams, buyerAssets, 0, address(this), address(this));
-        SafeApproveLib.forceApproveMax(market.loanToken, MIDNIGHT);
+        ERC20Lib.safeApprove(market.loanToken, MIDNIGHT, buyerAssets);
 
         return CALLBACK_SUCCESS;
     }
 
     /// @dev Max buyerAssets amount that the callback can handle.
-    /// @dev This function is useful for bundles to query how much is available at the moment.
-    /// @dev Other buy callbacks might not take all constraints into account to provide their bound, but this is fine,
-    /// if the routing layer can take into account the other reasons.
+    /// @dev Takers receive the amount to take per offer from the routing layer. But the routing layer is
+    /// asynchronous/offchain, and might not be up to date on the chain's latest state. To counter this, takers can
+    /// query atomically this function to cap their take.
+    /// @dev Ignores some static reasons why the bound might be smaller, such as wrong loan token, wrong owner... But it
+    /// is easy for the routing layer to take that into account.
+    /// @dev Reverts if data is not well formed.
+    /// @dev Under-estimates the real bound if the callback is the fee recipient of the blue market.
     function buyerAssetsBound(bytes32, Market memory, address, bytes memory data) external view returns (uint256) {
         MarketParams memory marketParams = abi.decode(data, (MarketParams));
 
@@ -94,7 +108,7 @@ contract BlueBuyCallback is IBlueBuyCallback {
         uint256 supplyAssets = IMorpho(BLUE).position(marketParams.id(), address(this)).supplyShares
             .toAssetsDown(totalSupplyAssets, totalSupplyShares);
         uint256 liquidity = totalSupplyAssets - totalBorrowAssets;
-        uint256 blueBalance = IERC20Balance(marketParams.loanToken).balanceOf(BLUE);
+        uint256 blueBalance = IERC20Extended(marketParams.loanToken).balanceOf(BLUE);
 
         return UtilsLib.min(UtilsLib.min(supplyAssets, liquidity), blueBalance);
     }

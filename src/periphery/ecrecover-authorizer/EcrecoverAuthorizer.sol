@@ -9,7 +9,7 @@ import {
     Signature,
     AUTHORIZATION_TYPEHASH,
     EIP712_DOMAIN_TYPEHASH
-} from "./IEcrecoverAuthorizer.sol";
+} from "./interfaces/IEcrecoverAuthorizer.sol";
 
 /// @dev Helper contract to authorize on Midnight with a signature.
 /// @dev This contract must be authorized on Midnight.
