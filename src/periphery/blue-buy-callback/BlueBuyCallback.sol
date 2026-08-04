@@ -22,7 +22,10 @@ import {ERC20Lib} from "../libraries/ERC20Lib.sol";
 /// @dev The OWNER can also authorize other accounts (optionally with signature), typically useful for
 /// bundle contracts.
 /// @dev Inherits the token safety requirements of Midnight (see Midnight.sol).
-/// @dev Anyone authorized by the owner on Midnight can indirectly steal this contract's Blue positions.
+/// @dev Anyone authorized by the owner on Midnight can pull this contract's Blue positions through a take on Midnight
+/// on behalf of OWNER.
+/// @dev An account authorized on Blue to act on behalf of this contract can notably borrow on its behalf, which
+/// is not the expected use-case, but it is not explicitly prevented because it does not affect onBuy.
 contract BlueBuyCallback is IBlueBuyCallback {
     using MarketParamsLib for MarketParams;
     using MorphoBalancesLib for IMorpho;
@@ -64,6 +67,7 @@ contract BlueBuyCallback is IBlueBuyCallback {
         }
     }
 
+    /// @dev Useful to handle rewards that the callback earned through its Blue positions.
     function skim(address token) external {
         uint256 balance = IERC20Extended(token).balanceOf(address(this));
         SafeTransferLib.safeTransfer(token, OWNER, balance);
