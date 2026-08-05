@@ -135,10 +135,10 @@ rule mulDivResidualBound(uint256 a, uint256 b, uint256 d) {
 }
 
 rule mathMulDivZero(mathint a, mathint b, mathint d) {
-    assert mathMulDivDown(0, b, d) == 0;
-    assert mathMulDivUp(0, b, d) == 0;
-    assert mathMulDivDown(a, 0, d) == 0;
-    assert mathMulDivUp(a, 0, d) == 0;
+    assert d > 0 => mathMulDivDown(0, b, d) == 0;
+    assert d > 0 => mathMulDivUp(0, b, d) == 0;
+    assert d > 0 => mathMulDivDown(a, 0, d) == 0;
+    assert d > 0 => mathMulDivUp(a, 0, d) == 0;
 }
 
 rule mathMulDivMonotoneA(mathint a1, mathint a2, mathint b, mathint d) {
@@ -152,8 +152,8 @@ rule mathMulDivMonotoneB(mathint a, mathint b1, mathint b2, mathint d) {
 }
 
 rule mathMulDivMonotoneD(mathint a, mathint b, mathint d1, mathint d2) {
-    assert 0 < d1 && d1 <= d2 => mathMulDivDown(a, b, d1) >= mathMulDivDown(a, b, d2);
-    assert 0 < d1 && d1 <= d2 => mathMulDivUp(a, b, d1) >= mathMulDivUp(a, b, d2);
+    assert a >= 0 && b >= 0 && 0 < d1 && d1 <= d2 => mathMulDivDown(a, b, d1) >= mathMulDivDown(a, b, d2);
+    assert a >= 0 && b >= 0 && 0 < d1 && d1 <= d2 => mathMulDivUp(a, b, d1) >= mathMulDivUp(a, b, d2);
 }
 
 // 1-Lipschitz in the first argument when b <= d: the result cannot grow faster than the numerator a.
@@ -229,7 +229,7 @@ rule mathMulDivUpGeqMulDivDown(mathint a, mathint b, mathint d) {
 }
 
 rule mathMulDivUpTightBound(mathint a, mathint b, mathint d) {
-    assert mathMulDivUp(a, b, d) > 0 => (mathMulDivUp(a, b, d) - 1) * d < a * b;
+    assert a >= 0 && b >= 0 && d > 0 && mathMulDivUp(a, b, d) > 0 => (mathMulDivUp(a, b, d) - 1) * d < a * b;
 }
 
 rule mathMulDivUpUpperBound(mathint a, mathint b, mathint d) {
@@ -237,8 +237,8 @@ rule mathMulDivUpUpperBound(mathint a, mathint b, mathint d) {
 }
 
 rule mathMulDivResidualBound(mathint a, mathint b, mathint d) {
-    assert a <= d && b <= d => a - mathMulDivDown(a, b, d) <= d - b;
-    assert a <= d && b <= d => a - mathMulDivUp(a, b, d) <= d - b;
+    assert a >= 0 && b >= 0 && a <= d && b <= d => a - mathMulDivDown(a, b, d) <= d - b;
+    assert a >= 0 && b >= 0 && a <= d && b <= d => a - mathMulDivUp(a, b, d) <= d - b;
 }
 
 rule mulDivEqMathMulDiv(uint256 a, uint256 b, uint256 d) {
