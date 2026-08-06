@@ -64,7 +64,7 @@ function boundedTickPrice() returns uint256 {
 
 function mulDivDownSummary(uint256 x, uint256 y, uint256 d) returns uint256 {
     mathint product = to_mathint(x) * y;
-    if (d == 0 || x * y >= 2 ^ 256) {
+    if (d != 0 && x * y >= 2 ^ 256) {
         mulOverflow = true;
     }
 
@@ -78,7 +78,7 @@ function mulDivDownSummary(uint256 x, uint256 y, uint256 d) returns uint256 {
 
 function mulDivUpSummary(uint256 x, uint256 y, uint256 d) returns uint256 {
     mathint product = x * y;
-    if (d == 0 || x * y + d - 1 >= 2 ^ 256) {
+    if (d != 0 && x * y + d - 1 >= 2 ^ 256) {
         mulOverflow = true;
     }
 
