@@ -8,6 +8,9 @@ import {Market} from "../../interfaces/IMidnight.sol";
 
 interface IBlueFallbackRolling is IMorphoSupplyCollateralCallback {
     /// ERRORS ///
+    error BlueLltvTooLow();
+    error Ended();
+    error EndNotAfterStart();
     error IncentiveTooHigh();
     error IncorrectActivatedCollateral();
     error InconsistentCollateralToken();
@@ -22,7 +25,9 @@ interface IBlueFallbackRolling is IMorphoSupplyCollateralCallback {
         bytes32 indexed midnightId,
         bytes32 indexed blueId,
         uint256 start,
-        uint256 incentive,
+        uint256 end,
+        uint256 incentiveAtStart,
+        uint256 incentiveAtEnd,
         bool enabled
     );
     event Roll(
@@ -41,13 +46,23 @@ interface IBlueFallbackRolling is IMorphoSupplyCollateralCallback {
     function isConfig(address user, bytes32 configId) external view returns (bool);
 
     /// FUNCTIONS ///
-    function setConfig(bytes32 midnightId, bytes32 blueId, uint64 start, uint64 incentive, bool enabled) external;
+    function setConfig(
+        bytes32 midnightId,
+        bytes32 blueId,
+        uint64 start,
+        uint64 end,
+        uint64 incentiveAtStart,
+        uint64 incentiveAtEnd,
+        bool enabled
+    ) external;
     function roll(
         Market memory midnightMarket,
         MarketParams memory blueMarketParams,
         address user,
         uint64 start,
-        uint64 incentive,
+        uint64 end,
+        uint64 incentiveAtStart,
+        uint64 incentiveAtEnd,
         uint256 assets
     ) external;
 }
