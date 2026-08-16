@@ -36,16 +36,20 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         uint64 end,
         uint64 incentiveAtStart,
         uint64 incentiveAtEnd,
+        uint128 minRollableAssets,
         bool enabled
     ) external override {
         require(start < end, EndNotAfterStart());
         require(incentiveAtStart <= WAD, IncentiveTooHigh());
         require(incentiveAtEnd <= WAD, IncentiveTooHigh());
 
-        isConfig[msg.sender][keccak256(abi.encode(midnightId, blueId, start, end, incentiveAtStart, incentiveAtEnd))] =
-            enabled;
+        bytes32 configId =
+            keccak256(abi.encode(midnightId, blueId, start, end, incentiveAtStart, incentiveAtEnd, minRollableAssets));
+        isConfig[msg.sender][configId] = enabled;
 
-        emit SetConfig(msg.sender, midnightId, blueId, start, end, incentiveAtStart, incentiveAtEnd, enabled);
+        emit SetConfig(
+            msg.sender, midnightId, blueId, start, end, incentiveAtStart, incentiveAtEnd, minRollableAssets, enabled
+        );
     }
 
     function roll(
@@ -56,14 +60,14 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         uint64 end,
         uint64 incentiveAtStart,
         uint64 incentiveAtEnd,
+        uint128 minRollableAssets,
         uint256 assets
     ) external override {
         bytes32 midnightId = IdLib.toId(midnightMarket);
         bytes32 blueId = Id.unwrap(blueMarketParams.id());
-        require(
-            isConfig[user][keccak256(abi.encode(midnightId, blueId, start, end, incentiveAtStart, incentiveAtEnd))],
-            NotConfigured()
-        );
+        bytes32 configId =
+            keccak256(abi.encode(midnightId, blueId, start, end, incentiveAtStart, incentiveAtEnd, minRollableAssets));
+        require(isConfig[user][configId], NotConfigured());
         require(blueMarketParams.loanToken == midnightMarket.loanToken, InconsistentLoanToken());
         require(block.timestamp >= start, NotStarted());
         require(block.timestamp <= end, Ended());
@@ -75,9 +79,13 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
             InconsistentCollateralToken()
         );
 
-        // Round in favor of the Midnight position.
-        uint256 collateralAssets = IMidnight(MIDNIGHT).collateral(midnightId, user, collateralIndex)
-            .mulDivDown(assets, IMidnight(MIDNIGHT).debt(midnightId, user));
+        uint256 debtAssets = IMidnight(MIDNIGHT).debt(midnightId, user);
+        require(assets >= minRollableAssets || assets == debtAssets, RollableAssetsTooLow());
+
+        // Round in favor of the Midnight position. Thus, splitting the rolls can lower the blue final LTV. This is
+        // mitigated by the min rollable debt.
+        uint256 collateralAssets =
+            IMidnight(MIDNIGHT).collateral(midnightId, user, collateralIndex).mulDivDown(assets, debtAssets);
         // Round against the roller.
         uint256 incentiveFactor = incentiveAtEnd >= incentiveAtStart
             ? incentiveAtStart
