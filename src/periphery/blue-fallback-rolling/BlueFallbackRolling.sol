@@ -43,8 +43,8 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
     ) external override {
         require(msg.sender == user || IMidnight(MIDNIGHT).isAuthorized(user, msg.sender), Unauthorized());
         require(start < end, EndNotAfterStart());
-        require(incentiveAtStart <= WAD, IncentiveTooHigh());
         require(incentiveAtEnd <= WAD, IncentiveTooHigh());
+        require(incentiveAtEnd >= incentiveAtStart, DecreasingIncentive());
 
         bytes32 configId =
             keccak256(abi.encode(midnightId, blueId, start, end, incentiveAtStart, incentiveAtEnd, minRollableAssets));
@@ -99,11 +99,8 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         uint256 collateralAssets =
             IMidnight(MIDNIGHT).collateral(midnightId, user, collateralIndex).mulDivDown(assets, debtAssets);
         // Round against the roller.
-        uint256 incentiveFactor = incentiveAtEnd >= incentiveAtStart
-            ? incentiveAtStart
-                + UtilsLib.mulDivDown(incentiveAtEnd - incentiveAtStart, block.timestamp - start, end - start)
-            : incentiveAtStart
-                - UtilsLib.mulDivUp(incentiveAtStart - incentiveAtEnd, block.timestamp - start, end - start);
+        uint256 incentiveFactor = incentiveAtStart
+            + UtilsLib.mulDivDown(incentiveAtEnd - incentiveAtStart, block.timestamp - start, end - start);
         uint256 incentiveAssets = UtilsLib.mulDivDown(assets, incentiveFactor, WAD);
 
         emit Roll(msg.sender, user, midnightId, blueId, assets, collateralAssets, incentiveAssets);
