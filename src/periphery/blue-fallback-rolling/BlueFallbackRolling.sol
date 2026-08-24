@@ -29,7 +29,7 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         BLUE = _blue;
     }
 
-    /// @dev The caller must be `user` or an address authorized for `user` on Midnight.
+    /// @dev The caller must be user or an address authorized for user on Midnight.
     function setConfig(
         address user,
         bytes32 midnightId,
