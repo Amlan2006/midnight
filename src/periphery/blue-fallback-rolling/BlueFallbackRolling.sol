@@ -34,10 +34,10 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         address user,
         bytes32 midnightId,
         bytes32 blueId,
-        uint64 start,
-        uint64 end,
-        uint64 incentiveAtStart,
-        uint64 incentiveAtEnd,
+        uint256 start,
+        uint256 end,
+        uint256 incentiveAtStart,
+        uint256 incentiveAtEnd,
         uint128 minRollableAssets,
         bool enabled
     ) external override {
@@ -68,10 +68,10 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         Market memory midnightMarket,
         MarketParams memory blueMarketParams,
         address user,
-        uint64 start,
-        uint64 end,
-        uint64 incentiveAtStart,
-        uint64 incentiveAtEnd,
+        uint256 start,
+        uint256 end,
+        uint256 incentiveAtStart,
+        uint256 incentiveAtEnd,
         uint128 minRollableAssets,
         uint256 assets
     ) external override {

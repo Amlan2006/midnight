@@ -16,9 +16,9 @@ contract BlueFallbackRollingTest is BaseTest {
     using MarketParamsLib for MarketParams;
 
     uint256 internal constant BLUE_LLTV = 0.86e18;
-    uint64 internal constant INCENTIVE_AT_START = 0.0002e18;
-    uint64 internal constant INCENTIVE_AT_END = 0.001e18;
-    uint64 internal constant MAX_INCENTIVE = 1e18;
+    uint256 internal constant INCENTIVE_AT_START = 0.0002e18;
+    uint256 internal constant INCENTIVE_AT_END = 0.001e18;
+    uint256 internal constant MAX_INCENTIVE = 1e18;
     uint256 internal constant DEBT = 10_000e18;
     uint128 internal constant MIN_ROLLABLE_ASSETS = 2_500e18;
     uint256 internal constant MIN_FUZZED_ASSETS = 0.0001e18;
@@ -29,12 +29,12 @@ contract BlueFallbackRollingTest is BaseTest {
     Market internal midnightMarket;
     MarketParams internal blueMarketParams;
     uint256 internal blueCollateralIndex;
-    uint64 internal start;
-    uint64 internal end;
+    uint256 internal start;
+    uint256 internal end;
 
     function setUp() public override {
         super.setUp();
-        start = uint64(vm.getBlockTimestamp());
+        start = vm.getBlockTimestamp();
 
         end = start + 12 hours;
 
@@ -236,7 +236,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testRollPaysTheAuctionedIncentiveWhenTheAuctionEndsAfterMaturity() public {
-        uint64 lateEnd = uint64(midnightMarket.maturity) + 1 days;
+        uint256 lateEnd = midnightMarket.maturity + 1 days;
         vm.prank(borrower);
         fallbackContract.setConfig(
             borrower,
@@ -290,7 +290,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testCannotRollBeforeStart() public {
-        uint64 futureStart = uint64(vm.getBlockTimestamp() + 1);
+        uint256 futureStart = vm.getBlockTimestamp() + 1;
         vm.prank(borrower);
         fallbackContract.setConfig(
             borrower,
@@ -462,7 +462,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testSetConfigRevertsForTooLargeIncentiveAtEnd() public {
-        uint64 incentiveAtEnd = MAX_INCENTIVE + 1;
+        uint256 incentiveAtEnd = MAX_INCENTIVE + 1;
 
         vm.expectRevert(IBlueFallbackRolling.IncentiveTooHigh.selector);
         fallbackContract.setConfig(
@@ -479,7 +479,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testSetConfigRevertsForTooLargeIncentiveAtStart() public {
-        uint64 incentiveAtStart = MAX_INCENTIVE + 1;
+        uint256 incentiveAtStart = MAX_INCENTIVE + 1;
 
         vm.expectRevert(IBlueFallbackRolling.IncentiveTooHigh.selector);
         fallbackContract.setConfig(
@@ -594,7 +594,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testSetConfigDoesNotReplaceOtherConfig() public {
-        uint64 otherStart = start + 1;
+        uint256 otherStart = start + 1;
         vm.prank(borrower);
         fallbackContract.setConfig(
             borrower,
@@ -652,7 +652,7 @@ contract BlueFallbackRollingTest is BaseTest {
     function testSetConfigByMidnightAuthorizedCaller() public {
         vm.prank(borrower);
         midnight.setIsAuthorized(lender, true, borrower);
-        uint64 otherEnd = end + 1;
+        uint256 otherEnd = end + 1;
 
         vm.expectEmit(address(fallbackContract));
         emit IBlueFallbackRolling.SetConfig(
@@ -1192,10 +1192,10 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function configId(
-        uint64 _start,
-        uint64 _end,
-        uint64 incentiveAtStart,
-        uint64 incentiveAtEnd,
+        uint256 _start,
+        uint256 _end,
+        uint256 incentiveAtStart,
+        uint256 incentiveAtEnd,
         uint128 minRollableAssets
     ) internal view returns (bytes32) {
         return keccak256(
