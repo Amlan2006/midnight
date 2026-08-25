@@ -32,7 +32,7 @@ interface IBlueFallbackRolling is IMorphoSupplyCollateralCallback {
     function isConfig(address user, bytes32 configId) external view returns (bool);
 
     /// FUNCTIONS ///
-    function setConfig(address user, bytes32 midnightId, bytes32 blueId, uint256 start, uint256 end, uint256 incentiveAtStart, uint256 incentiveAtEnd, uint128 minRollableAssets, bool enabled) external;
-    function roll(Market memory midnightMarket, MarketParams memory blueMarketParams, address user, uint256 start, uint256 end, uint256 incentiveAtStart, uint256 incentiveAtEnd, uint128 minRollableAssets, uint256 assets) external;
+    function setConfig(address user, bytes32 midnightId, bytes32 blueId, uint256 start, uint256 end, uint256 incentiveAtStart, uint256 incentiveAtEnd, uint256 minRollableAssets, bool enabled) external;
+    function roll(Market memory midnightMarket, MarketParams memory blueMarketParams, address user, uint256 start, uint256 end, uint256 incentiveAtStart, uint256 incentiveAtEnd, uint256 minRollableAssets, uint256 assets) external;
     // forgefmt: disable-end
 }

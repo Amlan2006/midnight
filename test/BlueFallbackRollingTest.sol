@@ -20,7 +20,7 @@ contract BlueFallbackRollingTest is BaseTest {
     uint256 internal constant INCENTIVE_AT_END = 0.001e18;
     uint256 internal constant MAX_INCENTIVE = 1e18;
     uint256 internal constant DEBT = 10_000e18;
-    uint128 internal constant MIN_ROLLABLE_ASSETS = 2_500e18;
+    uint256 internal constant MIN_ROLLABLE_ASSETS = 2_500e18;
     uint256 internal constant MIN_FUZZED_ASSETS = 0.0001e18;
 
     address internal keeper = makeAddr("keeper");
@@ -830,8 +830,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testRollRevertsForPartialRollWhenDebtIsBelowMinRollableAssets() public {
-        // forge-lint: disable-next-line(unsafe-typecast) as DEBT + 1 < type(uint128).max
-        uint128 minRollableAssets = uint128(DEBT + 1);
+        uint256 minRollableAssets = DEBT + 1;
         uint256 assets = DEBT / 4;
         vm.prank(borrower);
         fallbackContract.setConfig(
@@ -863,8 +862,7 @@ contract BlueFallbackRollingTest is BaseTest {
 
     /// @dev One wei of debt above `minRollableAssets` is enough for the constraint to apply.
     function testRollRevertsWhenDebtIsJustAboveMinRollableAssets() public {
-        // forge-lint: disable-next-line(unsafe-typecast) as DEBT - 1 < type(uint128).max
-        uint128 minRollableAssets = uint128(DEBT - 1);
+        uint256 minRollableAssets = DEBT - 1;
         vm.prank(borrower);
         fallbackContract.setConfig(
             borrower,
@@ -894,7 +892,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testRollAllowsFullRollBelowMinRollableAssets() public {
-        uint128 minRollableAssets = type(uint128).max;
+        uint256 minRollableAssets = type(uint256).max;
         vm.prank(borrower);
         fallbackContract.setConfig(
             borrower,
@@ -1007,7 +1005,7 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testSetConfigDoesNotReplaceConfigWithOtherMinRollableAssets() public {
-        uint128 otherMinRollableAssets = MIN_ROLLABLE_ASSETS + 1;
+        uint256 otherMinRollableAssets = MIN_ROLLABLE_ASSETS + 1;
         vm.prank(borrower);
         fallbackContract.setConfig(
             borrower,
@@ -1033,8 +1031,8 @@ contract BlueFallbackRollingTest is BaseTest {
         );
     }
 
-    function testRollRevertsWithFuzzedMinRollableAssets(uint128 minRollableAssets, uint256 assets) public {
-        minRollableAssets = uint128(bound(minRollableAssets, 1, 2 * DEBT));
+    function testRollRevertsWithFuzzedMinRollableAssets(uint256 minRollableAssets, uint256 assets) public {
+        minRollableAssets = bound(minRollableAssets, 1, 2 * DEBT);
         assets = bound(assets, 0, minRollableAssets < DEBT ? minRollableAssets - 1 : DEBT - 1);
         vm.prank(borrower);
         fallbackContract.setConfig(
@@ -1069,8 +1067,8 @@ contract BlueFallbackRollingTest is BaseTest {
         assertEq(loanToken.balanceOf(keeper), 0);
     }
 
-    function testRollSucceedsWithFuzzedMinRollableAssets(uint128 minRollableAssets, uint256 assets) public {
-        minRollableAssets = uint128(bound(minRollableAssets, 0, 2 * DEBT));
+    function testRollSucceedsWithFuzzedMinRollableAssets(uint256 minRollableAssets, uint256 assets) public {
+        minRollableAssets = bound(minRollableAssets, 0, 2 * DEBT);
         uint256 minAssets = MIN_FUZZED_ASSETS;
         if (minRollableAssets > MIN_FUZZED_ASSETS) minAssets = minRollableAssets;
         if (minAssets > DEBT) minAssets = DEBT;
@@ -1114,10 +1112,10 @@ contract BlueFallbackRollingTest is BaseTest {
     }
 
     function testRollAllowsFullRollOfRemainderWithFuzzedMinRollableAssets(
-        uint128 minRollableAssets,
+        uint256 minRollableAssets,
         uint256 firstAssets
     ) public {
-        minRollableAssets = uint128(bound(minRollableAssets, 1, DEBT - MIN_FUZZED_ASSETS));
+        minRollableAssets = bound(minRollableAssets, 1, DEBT - MIN_FUZZED_ASSETS);
         firstAssets = bound(
             firstAssets,
             minRollableAssets > MIN_FUZZED_ASSETS ? minRollableAssets : MIN_FUZZED_ASSETS,
@@ -1196,7 +1194,7 @@ contract BlueFallbackRollingTest is BaseTest {
         uint256 _end,
         uint256 incentiveAtStart,
         uint256 incentiveAtEnd,
-        uint128 minRollableAssets
+        uint256 minRollableAssets
     ) internal view returns (bytes32) {
         return keccak256(
             abi.encode(

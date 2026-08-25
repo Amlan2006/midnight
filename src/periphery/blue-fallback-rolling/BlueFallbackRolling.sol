@@ -38,7 +38,7 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         uint256 end,
         uint256 incentiveAtStart,
         uint256 incentiveAtEnd,
-        uint128 minRollableAssets,
+        uint256 minRollableAssets,
         bool enabled
     ) external override {
         require(msg.sender == user || IMidnight(MIDNIGHT).isAuthorized(user, msg.sender), Unauthorized());
@@ -72,7 +72,7 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         uint256 end,
         uint256 incentiveAtStart,
         uint256 incentiveAtEnd,
-        uint128 minRollableAssets,
+        uint256 minRollableAssets,
         uint256 assets
     ) external override {
         bytes32 midnightId = IdLib.toId(midnightMarket);
