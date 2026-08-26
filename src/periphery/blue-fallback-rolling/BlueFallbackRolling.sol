@@ -94,7 +94,7 @@ contract BlueFallbackRolling is IBlueFallbackRolling {
         uint256 debtAssets = IMidnight(MIDNIGHT).debt(midnightId, user);
         require(assets >= minRollableAssets || assets == debtAssets, RolledAssetsTooLow());
 
-        // Round in favor of making the Midnight position safer. Thus, splitting the rolls can raise the blue final LTV.
+        // Round in favor of making the Midnight position healthier. Thus, splitting the rolls can raise the blue final LTV.
         // This is mitigated by the min rollable assets.
         uint256 collateralAssets =
             IMidnight(MIDNIGHT).collateral(midnightId, user, collateralIndex).mulDivDown(assets, debtAssets);
