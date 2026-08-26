@@ -17,7 +17,7 @@ import {SafeApproveLib} from "../libraries/SafeApproveLib.sol";
 /// position on Blue could be left close to liquidation.
 /// @dev The rolling incentive corresponds to the percentage of the rolled debt being paid as incentive which is
 /// equivalent to a proportion of added interest.
-/// @dev The rolling incentive is capped by 100% of the rolled debt.
+/// @dev The rolling incentive is capped by 100% of the rolled debt on Midnight, and is thus at most 50% of the debt created on Blue.
 contract BlueFallbackRolling is IBlueFallbackRolling {
     using MarketParamsLib for MarketParams;
     using UtilsLib for uint128;
