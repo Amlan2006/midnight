@@ -15,6 +15,9 @@ import {SafeApproveLib} from "../libraries/SafeApproveLib.sol";
 /// @dev Users must authorize this contract on both Midnight and Blue before their debt can be rolled.
 /// @dev Users must make sure that the oracle and the LLTV of the Blue market are appropriate; otherwise, their
 /// position on Blue could be left close to liquidation.
+/// @dev The rolling incentive corresponds to the percentage of the rolled debt being paid as incentive which is
+/// equivalent to a proportion of added interest.
+/// @dev The rolling incentive is capped by 100% of the rolled debt.
 contract BlueFallbackRolling is IBlueFallbackRolling {
     using MarketParamsLib for MarketParams;
     using UtilsLib for uint128;
